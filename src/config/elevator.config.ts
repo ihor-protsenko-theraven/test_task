@@ -1,0 +1,13 @@
+import {FLOOR_CONFIG} from "./floor.config";
+
+export const ELEVATOR_CONFIG = {
+    WIDTH: 60,
+    HEIGHT: FLOOR_CONFIG.HEIGHT,
+    BORDER_WIDTH: 3,
+    BORDER_COLOR: 0x00DDDD,
+    BACKGROUND_COLOR: 0xFFFFFF,
+    ALPHA_FILL: 0,
+
+    ELEVATOR_X_POSITION: 5,
+    ELEVATOR_Y_OFFSET: -5,
+};
