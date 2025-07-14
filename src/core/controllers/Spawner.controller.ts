@@ -1,19 +1,16 @@
 import {APP_SETTINGS} from '../../config/app-settings.config';
 import {TimeoutMap} from '../../types/types';
-import {Building} from '../models/Building';
-import {Passenger} from '../models/Passenger';
 import {randomBetween, randomFloorExcluding} from '../../utils/randomizer.util';
-import {IPassenger} from "../../interfaces/interfaces";
+import {IBuilding, IPassenger} from '../../interfaces/interfaces';
 
 export class SpawnerController {
     private _isSpawning: boolean = false;
     private readonly _timeoutMap: TimeoutMap = new Map();
     private readonly _floorsCount: number;
+    public onPassengerSpawned: (passenger: IPassenger) => void = () => {
+    };
 
-    constructor(
-        private readonly _building: Building,
-        private readonly _onPassengerSpawned: (passenger: Passenger) => void
-    ) {
+    constructor(private readonly _building: IBuilding) {
         this._floorsCount = APP_SETTINGS.FLOORS_COUNT;
     }
 
@@ -49,7 +46,7 @@ export class SpawnerController {
             const passenger: IPassenger | null = this._building.addPassengerToFloor(floor, targetFloor);
 
             if (passenger) {
-                this._onPassengerSpawned(passenger);
+                this.onPassengerSpawned(passenger);
             }
 
             this._scheduleSpawnLoop(floor);

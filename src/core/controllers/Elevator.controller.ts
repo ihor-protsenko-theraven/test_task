@@ -1,5 +1,4 @@
 import {Application} from 'pixi.js';
-import {Building} from '../models/Building';
 import {BuildingView} from '../../renderer/BuildingView';
 import {PassengerFlowController} from './PassengerFlow.controller';
 import {SpawnerController} from './Spawner.controller';
@@ -8,29 +7,23 @@ import {Direction} from '../../enums/direction.enum';
 import {ElevatorState} from '../../enums/elevator.enum';
 import {delay} from '../../utils/timer.util';
 import {reverseDirection} from '../../utils/direction.util';
+import {IBuilding, IElevator, IPassenger} from '../../interfaces/interfaces';
 
 
 export class ElevatorController {
-    private readonly _buildingView: BuildingView;
-    private readonly _passengerFlowController: PassengerFlowController;
-    private readonly _spawnerController: SpawnerController;
-
     private _direction: Direction = Direction.Up;
     private _elevatorState: ElevatorState = ElevatorState.Idle;
 
     constructor(private readonly _app: Application,
-                private readonly _building: Building,
+                private readonly _building: IBuilding,
+                private readonly _buildingView: BuildingView,
+                private readonly _passengerFlowController: PassengerFlowController,
+                private readonly _spawnerController: SpawnerController
     ) {
-        this._buildingView = new BuildingView(_app, _building);
-
-        this._passengerFlowController = new PassengerFlowController(_building, this._buildingView);
-
-        this._spawnerController = new SpawnerController(_building,
-            (passenger): void => {
-                this._passengerFlowController.createPassengerView(passenger);
-                this._onPassengerAppeared();
-            }
-        );
+        this._spawnerController.onPassengerSpawned = async (passenger: IPassenger): Promise<void> => {
+            this._passengerFlowController.createPassengerView(passenger);
+            await this._onPassengerAppeared();
+        };
     }
 
     public start(): void {
@@ -98,12 +91,12 @@ export class ElevatorController {
     }
 
     private async _moveElevatorToFloor(target: number): Promise<void> {
-        const elevator = this._building.elevator;
-        const duration = APP_SETTINGS.ELEVATOR_SPEED_PER_FLOOR_MS * Math.abs(elevator.currentFloor - target);
+        const elevator: IElevator = this._building.elevator;
+        const duration: number = APP_SETTINGS.ELEVATOR_SPEED_PER_FLOOR_MS * Math.abs(elevator.currentFloor - target);
         this._elevatorState = ElevatorState.Moving;
-        console.log(`[Move] from ${elevator.currentFloor} to ${target}. Direction: ${this._direction}`);
+        console.log(`[Move]  from ${elevator.currentFloor} to ${target}. Direction: ${this._direction}`);
 
-        await this._buildingView.elevatorView.animateToFloor(target, duration);
+        await this._buildingView.elevatorView.animateElevatorToFloor(target, duration);
 
         elevator.currentFloor = target;
         this._elevatorState = ElevatorState.Idle;
@@ -111,9 +104,9 @@ export class ElevatorController {
     }
 
     private _findNextTargetInDirection(current: number, direction: Direction): number | null {
-        const targetFloors = this._building.elevator.elevatorPassengers
-            .map(p => p.targetFloor)
-            .filter(f => direction === Direction.Up ? f > current : f < current);
+        const targetFloors: number[] = this._building.elevator.elevatorPassengers
+            .map((passenger: IPassenger): number => passenger.targetFloor)
+            .filter((floor: number): boolean => direction === Direction.Up ? floor > current : floor < current);
 
         if (targetFloors.length > 0) {
             return direction === Direction.Up
@@ -125,7 +118,7 @@ export class ElevatorController {
     }
 
     private _findNextGlobalTargetFloor(current: number): number | null {
-        let minDistance = Infinity;
+        let minDistance: number = Infinity;
         let closestFloor: number | null = null;
 
         this._building.floors.forEach((floor, i) => {
@@ -134,7 +127,7 @@ export class ElevatorController {
                 return;
             }
 
-            const dist = Math.abs(current - i);
+            const dist: number = Math.abs(current - i);
             if (dist < minDistance) {
                 minDistance = dist;
                 closestFloor = i;

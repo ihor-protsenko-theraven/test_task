@@ -1,6 +1,8 @@
 import {Container, Graphics} from 'pixi.js';
 import {ELEVATOR_CONFIG} from '../config/elevator.config';
-import {Easing, Tween} from "@tweenjs/tween.js";
+import {Easing, Tween} from '@tweenjs/tween.js';
+import {PassengerView} from "./PassengerView";
+import {PASSENGER_SETTINGS} from "../config/passenger.config";
 
 export class ElevatorView {
     public elevatorContainer: Container;
@@ -31,7 +33,7 @@ export class ElevatorView {
     private _drawElevatorBody(): void {
         this._elevatorGraphics.clear();
 
-        const stub = 12;
+        const stub = ELEVATOR_CONFIG.STUB;
         const half = ELEVATOR_CONFIG.BORDER_WIDTH / 2;
 
         this._elevatorGraphics.beginFill(ELEVATOR_CONFIG.BACKGROUND_COLOR, ELEVATOR_CONFIG.ALPHA_FILL);
@@ -56,7 +58,7 @@ export class ElevatorView {
         return (this._totalFloors - 1 - floor) * this._floorHeight + ELEVATOR_CONFIG.ELEVATOR_Y_OFFSET;
     }
 
-    public animateToFloor(targetFloor: number, duration: number): Promise<void> {
+    public animateElevatorToFloor(targetFloor: number, duration: number): Promise<void> {
         return new Promise(resolve => {
             const targetY = this._getElevatorYFromFloor(targetFloor);
             new Tween(this.elevatorContainer)
@@ -67,6 +69,14 @@ export class ElevatorView {
         });
     }
 
+    public repositionPassengers(passengerViews: PassengerView[]): void {
+        passengerViews.forEach((view, index) => {
+            const targetX = 10 + index * (PASSENGER_SETTINGS.PASSENGER_WIDTH + 4);
+            const targetY = PASSENGER_SETTINGS.PASSENGER_Y_OFFSET;
+
+            view.animateToQueuePosition(targetX, targetY, PASSENGER_SETTINGS.PASSENGER_QUEUE_MOVE_TIME);
+        });
+    }
 
 }
 

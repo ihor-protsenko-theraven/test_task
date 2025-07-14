@@ -12,7 +12,5 @@ export class Passenger implements IPassenger {
 
         this.currentFloor = currentFloor;
         this.direction = getDirection(currentFloor, targetFloor);
-
-        console.log(`[Create]: Passenger ${id} → from ${currentFloor} to ${targetFloor} (${this.direction})`);
     }
 }

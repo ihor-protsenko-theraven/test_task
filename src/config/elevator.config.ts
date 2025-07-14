@@ -1,13 +1,16 @@
 import {FLOOR_CONFIG} from "./floor.config";
+import {APP_SETTINGS} from "./app-settings.config";
 
 export const ELEVATOR_CONFIG = {
-    WIDTH: 60,
-    HEIGHT: FLOOR_CONFIG.HEIGHT,
+    WIDTH: 30 * APP_SETTINGS.ELEVATOR_CAPACITY,
+    HEIGHT: FLOOR_CONFIG.HEIGHT - 5,
     BORDER_WIDTH: 3,
     BORDER_COLOR: 0x00DDDD,
     BACKGROUND_COLOR: 0xFFFFFF,
     ALPHA_FILL: 0,
 
     ELEVATOR_X_POSITION: 5,
-    ELEVATOR_Y_OFFSET: -5,
+    ELEVATOR_Y_OFFSET: 0,
+
+    STUB: 12
 };

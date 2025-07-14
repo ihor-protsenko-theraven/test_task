@@ -4,20 +4,20 @@ import {FloorView} from './FloorView';
 import {ElevatorView} from './ElevatorView';
 import {BUILDING_CONFIG} from "../config/building.config";
 import {FLOOR_CONFIG} from "../config/floor.config";
-import {Floor} from "../core/models/Floor";
 import {Application, Container, Graphics} from "pixi.js";
 import {FloorsViewMap} from "../types/types";
 import {PassengerView} from "./PassengerView";
+import {IBuilding, IFloor} from "../interfaces/interfaces";
 
 export class BuildingView {
     private readonly _app: Application;
-    private readonly _buildingModel: Building;
+    private readonly _buildingModel: IBuilding;
     private readonly _floorViews: FloorsViewMap = new Map();
     public elevatorView: ElevatorView;
     private readonly _borderGraphics: Graphics;
     private readonly _floorsLayer: Container;
 
-    constructor(app: Application, building: Building) {
+    constructor(app: Application, building: IBuilding) {
         this._app = app;
         this._buildingModel = building;
         this._borderGraphics = new Graphics();
@@ -36,7 +36,7 @@ export class BuildingView {
 
         this._floorsLayer = new Container();
         this._app.stage.addChildAt(this._floorsLayer, 1);
-        this._buildingModel.floors.forEach((floor: Floor): void => {
+        this._buildingModel.floors.forEach((floor: IFloor): void => {
             const fv = new FloorView(floor.floorNumber);
             this._floorViews.set(floor.floorNumber, fv);
             this._floorsLayer.addChild(fv.container);
@@ -50,11 +50,9 @@ export class BuildingView {
         this._app.stage.addChild(this.elevatorView.elevatorContainer);
     }
 
-
     public addPassengerToStage(passengerView: PassengerView): void {
         this._app.stage.addChild(passengerView.passengerContainer);
     }
-
 
 }
 

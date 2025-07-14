@@ -6,14 +6,16 @@ export function animateMove(
     x: number,
     y: number,
     duration: number,
-    easing: any,
+    easing: (amount: number) => number,
     onComplete?: () => void
 ): void {
     const tween = new Tween(container)
         .to({x, y, alpha: 1}, duration)
         .easing(easing);
 
-    if (onComplete) tween.onComplete(onComplete);
+    if (onComplete) {
+        tween.onComplete(onComplete);
+    }
 
     tween.start();
 }

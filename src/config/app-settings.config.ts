@@ -7,6 +7,6 @@ export const APP_SETTINGS = {
         MIN: 4000,
         MAX: 10000,
     },
-    MAX_PEOPLE_IN_QUEUE: 5,
+    MAX_PEOPLE_IN_QUEUE: 10,
     BACKGROUND_COLOR: '#FFF'
 };

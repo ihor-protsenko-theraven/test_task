@@ -15,25 +15,22 @@ export class FloorView {
         this.floorNumber = floorNumber;
         this.container = new PIXI.Container();
 
-        const offset_Y = (APP_SETTINGS.FLOORS_COUNT - 1 - floorNumber) * FLOOR_CONFIG.HEIGHT;
+        const offset_Y: number = (APP_SETTINGS.FLOORS_COUNT - 1 - floorNumber) * FLOOR_CONFIG.HEIGHT;
         this.container.position.set(0, offset_Y);
 
-        // corridor
         this._corridorLine.lineStyle(FLOOR_CONFIG.LINE.THICKNESS, FLOOR_CONFIG.LINE.COLOR);
-        const corridorStartX = ELEVATOR_CONFIG.WIDTH + FLOOR_CONFIG.LINE.CORRIDOR_OFFSET_X;
+        const corridorStartX: number = ELEVATOR_CONFIG.WIDTH + FLOOR_CONFIG.LINE.CORRIDOR_OFFSET_X;
         this._corridorLine.moveTo(corridorStartX, 0);
         this._corridorLine.lineTo(BUILDING_CONFIG.WIDTH, 0);
         this.container.addChild(this._corridorLine);
 
-        // floor
         this._floorLine.lineStyle(FLOOR_CONFIG.LINE.THICKNESS, FLOOR_CONFIG.LINE.COLOR);
-        const floorStartX = corridorStartX;
-        const floorY = FLOOR_CONFIG.HEIGHT;
+        const floorStartX: number = corridorStartX;
+        const floorY: number = FLOOR_CONFIG.HEIGHT;
         this._floorLine.moveTo(floorStartX, floorY);
         this._floorLine.lineTo(BUILDING_CONFIG.WIDTH, floorY);
         this.container.addChild(this._floorLine);
 
-        // label
         this._floorLabel = new PIXI.Text(`Level ${floorNumber + 1}`, {
             fontSize: FLOOR_CONFIG.LABEL.FONT_SIZE,
             fill: FLOOR_CONFIG.LABEL.COLOR

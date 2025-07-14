@@ -1,10 +1,11 @@
-import {Container, Graphics, Text} from 'pixi.js';
+import {Container, Graphics, Point, Text} from 'pixi.js';
 import {Passenger} from '../core/models/Passenger';
 import {APP_SETTINGS} from '../config/app-settings.config';
-import {Direction} from "../enums/direction.enum";
+import {Direction} from '../enums/direction.enum';
 import {PASSENGER_SETTINGS} from "../config/passenger.config";
-import {FLOOR_CONFIG} from "../config/floor.config";
-import * as TWEEN from "@tweenjs/tween.js";
+import {FLOOR_CONFIG} from '../config/floor.config';
+import {Easing} from '@tweenjs/tween.js';
+import {animateMove} from '../utils/animate.util';
 
 export class PassengerView {
     public passenger: Passenger;
@@ -56,36 +57,36 @@ export class PassengerView {
         return (totalFloors - 1 - floor) * FLOOR_CONFIG.HEIGHT;
     }
 
-
-    public animateToQueuePosition(x: number, y: number): Promise<void> {
-        return new Promise(resolve => {
-            new TWEEN.Tween(this.passengerContainer)
-                .to({x, y, alpha: 1}, PASSENGER_SETTINGS.PASSENGER_MOVE_TIME)
-                .easing(TWEEN.Easing.Quadratic.Out)
-                .onComplete(() => resolve())
-                .start();
-        });
+    public animateToQueuePosition(targetX: number,
+                                  targetY: number,
+                                  animationDuration: number = PASSENGER_SETTINGS.PASSENGER_MOVE_TIME
+    ): void {
+        animateMove(this.passengerContainer, targetX, targetY, animationDuration, Easing.Quadratic.Out);
     }
 
-    public animateEnterElevator(targetX: number, targetY: number): Promise<void> {
-        return new Promise(resolve => {
-            new TWEEN.Tween(this.passengerContainer)
-                .to({x: targetX, y: targetY, alpha: 1}, 800)
-                .easing(TWEEN.Easing.Back.Out)
-                .onComplete(() => resolve())
-                .start();
-        });
+
+    public animateEnterElevator(targetXInsideElevator: number,
+                                targetYInsideElevator: number,
+                                onComplete?: () => void
+    ): void {
+        animateMove(this.passengerContainer, targetXInsideElevator, targetYInsideElevator, PASSENGER_SETTINGS.PASSENGER_MOVE_TIME, Easing.Back.Out, onComplete);
     }
 
-    public animateExitElevator(exitX: number): Promise<void> {
-        return new Promise(resolve => {
-            new TWEEN.Tween(this.passengerContainer)
-                .to({x: exitX, alpha: 0}, 800)
-                .easing(TWEEN.Easing.Back.Out)
-                .onComplete(() => resolve())
-                .start();
-        });
+
+    public animateExitElevator(exitX: number, onComplete: () => void): void {
+        return animateMove(this.passengerContainer, exitX, this.passengerContainer.y, PASSENGER_SETTINGS.PASSENGER_EXIT_TIME, Easing.Back.Out, onComplete);
     }
+
+    public moveToContainer(newParent: Container): void {
+        const global: Point = this.passengerContainer.getGlobalPosition();
+        this.passengerContainer.parent?.removeChild(this.passengerContainer);
+
+        newParent.addChild(this.passengerContainer);
+
+        const local: Point = newParent.toLocal(global);
+        this.passengerContainer.position.set(local.x, local.y);
+    }
+
 
 }
 

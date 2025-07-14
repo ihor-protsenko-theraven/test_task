@@ -24,7 +24,7 @@ export interface IFloor {
 }
 
 export interface IElevator {
-    readonly currentFloor: number;
+    currentFloor: number;
     direction: Direction;
 
     readonly hasSpace: boolean;
@@ -44,11 +44,5 @@ export interface IPassenger {
     readonly targetFloor: number;
     direction: Direction;
 }
-
-
-
-
-
-
 
 

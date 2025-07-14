@@ -5,6 +5,9 @@ import {APP_SETTINGS} from './config/app-settings.config';
 import {BUILDING_CONFIG} from './config/building.config';
 import {FLOOR_CONFIG} from './config/floor.config';
 import {ElevatorController} from './core/controllers/Elevator.controller';
+import {BuildingView} from './renderer/BuildingView';
+import {PassengerFlowController} from './core/controllers/PassengerFlow.controller';
+import {SpawnerController} from './core/controllers/Spawner.controller';
 
 const app = new PIXI.Application({
     background: APP_SETTINGS.BACKGROUND_COLOR,
@@ -12,32 +15,38 @@ const app = new PIXI.Application({
     height: APP_SETTINGS.FLOORS_COUNT * FLOOR_CONFIG.HEIGHT + 100
 });
 
-const startBtn = document.getElementById('start-spawn-btn');
-const stopBtn = document.getElementById('stop-spawn-btn');
-
-
 document.body.appendChild(app.view as HTMLCanvasElement);
+
+const building = new Building(APP_SETTINGS.FLOORS_COUNT, APP_SETTINGS.ELEVATOR_CAPACITY);
+const buildingView = new BuildingView(app, building);
+const passengerFlowController = new PassengerFlowController(building, buildingView);
+const spawnerController = new SpawnerController(building);
+
+const elevatorController = new ElevatorController(
+    app,
+    building,
+    buildingView,
+    passengerFlowController,
+    spawnerController
+);
 
 app.ticker.add(() => {
     TWEEN.update();
 });
 
-const building = new Building(
-    APP_SETTINGS.FLOORS_COUNT,
-    APP_SETTINGS.ELEVATOR_CAPACITY
-);
+const startBtn = document.getElementById('startSpawn');
+const stopBtn = document.getElementById('stopSpawn');
 
-const elevatorController = new ElevatorController(app, building);
+if (startBtn) {
+    startBtn.onclick = () => {
+        console.log('Starting simulation...');
+        elevatorController.start();
+    };
+}
 
-startBtn?.addEventListener('click', () => {
-    elevatorController.start()
-});
-stopBtn?.addEventListener('click', () => {
-    elevatorController.stopPassengerSpawning();
-});
-
-try {
-    console.log("Elevator simulation started successfully.");
-} catch (error) {
-    console.error("Failed to start elevator simulation:", error);
+if (stopBtn) {
+    stopBtn.onclick = () => {
+        console.log('Stopping passenger spawning...');
+        elevatorController.stopPassengerSpawning();
+    };
 }
