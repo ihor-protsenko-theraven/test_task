@@ -5,11 +5,10 @@ import {ELEVATOR_CONFIG} from '../../config/elevator.config';
 import {BUILDING_CONFIG} from '../../config/building.config';
 import {Direction} from '../../enums/direction.enum';
 import {PassengersQueueMap, PassengerViewMap} from '../../types/types';
-import {IElevator, IPassenger} from '../../interfaces/interfaces';
-import {Building} from '../models/Building';
+import {IBuilding, IElevator, IPassenger} from '../../interfaces/interfaces';
 import {BuildingView} from '../../renderer/BuildingView';
 import {PassengerView} from '../../renderer/PassengerView';
-import {initFloorMap} from '../../utils/floor-map.util';
+import {initFloorMap} from '../../utils/floors.util';
 import {getQueuePosition} from '../../utils/queue.util';
 
 
@@ -17,7 +16,7 @@ export class PassengerFlowController {
     private readonly _floorQueuesMap: PassengersQueueMap;
     private readonly _passengerViewsMap: PassengerViewMap = new Map();
 
-    constructor(private readonly _building: Building,
+    constructor(private readonly _building: IBuilding,
                 private readonly _buildingView: BuildingView,) {
         this._floorQueuesMap = initFloorMap<PassengerView>(this._building.floors.length);
     }
@@ -48,7 +47,7 @@ export class PassengerFlowController {
             return;
         }
 
-        const candidates: PassengerView[] = passengerQueue.filter(v => v.passenger.direction === direction);
+        const candidates: PassengerView[] = passengerQueue.filter((passenger: PassengerView): boolean => passenger.passenger.direction === direction);
         const freeSlots: number = APP_SETTINGS.ELEVATOR_CAPACITY - elevator.elevatorPassengers.length;
         const toBoard: PassengerView[] = candidates.slice(0, freeSlots);
 

@@ -1,4 +1,4 @@
-import {Direction} from "../enums/direction.enum";
+import {Direction} from '../enums/direction.enum';
 
 export function reverseDirection(direction: Direction): Direction {
     return direction === Direction.Up ? Direction.Down : Direction.Up;

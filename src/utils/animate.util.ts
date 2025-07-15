@@ -1,5 +1,5 @@
-import {Container} from "pixi.js";
-import {Tween} from "@tweenjs/tween.js";
+import {Container} from 'pixi.js';
+import {Tween} from '@tweenjs/tween.js';
 
 export function animateMove(
     container: Container,

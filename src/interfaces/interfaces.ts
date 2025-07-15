@@ -27,7 +27,7 @@ export interface IElevator {
     currentFloor: number;
     direction: Direction;
 
-    readonly hasSpace: boolean;
+    readonly hasFreeSpace: boolean;
     readonly hasPassengers: boolean;
     readonly elevatorPassengers: readonly IPassenger[];
 

@@ -1,5 +1,5 @@
-import {PassengerView} from "../renderer/PassengerView";
-import {FloorView} from "../renderer/FloorView";
+import {PassengerView} from '../renderer/PassengerView';
+import {FloorView} from '../renderer/FloorView';
 
 export type PassengersQueueMap = Map<number, PassengerView[]>;
 export type PassengerViewMap = Map<number, PassengerView>;

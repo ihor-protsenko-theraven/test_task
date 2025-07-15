@@ -1,5 +1,4 @@
 import {APP_SETTINGS} from '../config/app-settings.config';
-import {Building} from '../core/models/Building';
 import {FloorView} from './FloorView';
 import {ElevatorView} from './ElevatorView';
 import {BUILDING_CONFIG} from "../config/building.config";

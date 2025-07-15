@@ -30,23 +30,23 @@ const elevatorController = new ElevatorController(
     spawnerController
 );
 
-app.ticker.add(() => {
+app.ticker.add((): void => {
     TWEEN.update();
 });
 
-const startBtn = document.getElementById('startSpawn');
-const stopBtn = document.getElementById('stopSpawn');
+const startBtn: HTMLElement | null = document.getElementById('startSpawn');
+const stopBtn: HTMLElement | null = document.getElementById('stopSpawn');
 
 if (startBtn) {
     startBtn.onclick = () => {
-        console.log('Starting simulation...');
-        elevatorController.start();
+        elevatorController.startSimulation()
+            .then(() => console.log('Starting simulation =)'));
     };
 }
 
 if (stopBtn) {
     stopBtn.onclick = () => {
-        console.log('Stopping passenger spawning...');
-        elevatorController.stopPassengerSpawning();
+        console.log('Stopping simulation =(');
+        elevatorController.stopSimulation();
     };
 }

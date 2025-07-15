@@ -6,145 +6,179 @@ import {APP_SETTINGS} from '../../config/app-settings.config';
 import {Direction} from '../../enums/direction.enum';
 import {ElevatorState} from '../../enums/elevator.enum';
 import {delay} from '../../utils/timer.util';
+import {IBuilding, IElevator, IFloor, IPassenger} from '../../interfaces/interfaces';
 import {reverseDirection} from '../../utils/direction.util';
-import {IBuilding, IElevator, IPassenger} from '../../interfaces/interfaces';
-
+import {getFloorsBetween} from '../../utils/floors.util';
 
 export class ElevatorController {
     private _direction: Direction = Direction.Up;
-    private _elevatorState: ElevatorState = ElevatorState.Idle;
+    private _state: ElevatorState = ElevatorState.Idle;
 
-    constructor(private readonly _app: Application,
-                private readonly _building: IBuilding,
-                private readonly _buildingView: BuildingView,
-                private readonly _passengerFlowController: PassengerFlowController,
-                private readonly _spawnerController: SpawnerController
+    constructor(
+        private readonly _app: Application,
+        private readonly _building: IBuilding,
+        private readonly _buildingView: BuildingView,
+        private readonly _passengerFlow: PassengerFlowController,
+        private readonly _spawner: SpawnerController
     ) {
-        this._spawnerController.onPassengerSpawned = async (passenger: IPassenger): Promise<void> => {
-            this._passengerFlowController.createPassengerView(passenger);
-            await this._onPassengerAppeared();
+        this._spawner.onPassengerSpawned = async (passenger: IPassenger): Promise<void> => {
+            this._passengerFlow.createPassengerView(passenger);
+            await this._onPassengerSpawned();
         };
     }
 
-    public start(): void {
-        this._spawnerController.startSpawning();
-        this._scheduleNextMove();
+    public async startSimulation(): Promise<void> {
+        this._spawner.startSpawning();
+        await this._tryNextMove();
     }
 
-    private async _scheduleNextMove(): Promise<void> {
-        if (this._elevatorState !== ElevatorState.Idle) {
-            return;
-        }
-
-        await this._processFloor();
+    public stopSimulation(): void {
+        this._spawner.stopSpawning();
     }
 
-    private async _processFloor(): Promise<void> {
-        const currentFloor = this._building.elevator.currentFloor;
-        const shouldLoad = this._building.hasWaitingPassengersOnFloor(currentFloor, this._direction);
-        const shouldUnLoad = this._building.elevator.hasPassengersFor(currentFloor);
-
-        if (shouldUnLoad) {
-            this._elevatorState = ElevatorState.Unloading;
-            this._passengerFlowController.unloadPassengers();
-
-            await delay(APP_SETTINGS.LOADING_TIME);
+    private async _onPassengerSpawned(): Promise<void> {
+        if (this._state === ElevatorState.Idle) {
+            await this._tryNextMove();
         }
-
-        if (shouldLoad) {
-            this._elevatorState = ElevatorState.Loading;
-            this._passengerFlowController.loadPassengers(currentFloor, this._direction);
-
-            await delay(APP_SETTINGS.LOADING_TIME);
-        }
-
-        await this._decideNextMovement();
     }
 
-    private async _decideNextMovement(): Promise<void> {
-        this._elevatorState = ElevatorState.Idle;
-        const elevator = this._building.elevator;
-        const currentFloor = elevator.currentFloor;
 
-        let nextTarget = this._findNextTargetInDirection(currentFloor, this._direction);
+    private async _tryNextMove(): Promise<void> {
+        if (this._state !== ElevatorState.Idle) return;
+        await this._handleCurrentFloor(this._building.elevator.currentFloor);
+    }
 
-        if (nextTarget === null) {
+    private async _planNextMove(): Promise<void> {
+        this._state = ElevatorState.Idle;
+
+        const elevator: IElevator = this._building.elevator;
+        const currentFloor: number = elevator.currentFloor;
+
+        let nextFloor: number | null = this._getNextFloorInDirection(currentFloor, this._direction);
+
+        if (nextFloor === null) {
             this._direction = reverseDirection(this._direction);
 
-            if (this._building.hasWaitingPassengersOnFloor(currentFloor, this._direction)) {
-                await this._processFloor();
+            if (this._hasPendingPickupAt(currentFloor)) {
+                await this._handleCurrentFloor(currentFloor);
                 return;
             }
 
-            nextTarget = elevator.hasPassengers
-                ? this._findNextTargetInDirection(currentFloor, this._direction)
-                : this._findNextGlobalTargetFloor(currentFloor);
+            nextFloor = this._getFallbackTarget(currentFloor, elevator);
         }
 
-        if (nextTarget !== null) {
-            await this._moveElevatorToFloor(nextTarget);
-            await this._scheduleNextMove();
-            return;
+        if (nextFloor !== null) {
+            await this._moveElevatorTo(nextFloor, elevator);
+            await this._tryNextMove();
+        } else {
+            this._state = ElevatorState.Idle;
+        }
+    }
+
+    private async _handleCurrentFloor(floor: number,): Promise<void> {
+        await this._handlePassengerFlow(floor);
+
+        await this._planNextMove();
+    }
+
+    private async _handleIntermediateFloor(floor: number): Promise<void> {
+        await this._handlePassengerFlow(floor);
+        this._state = ElevatorState.Moving;
+    }
+
+
+    private async _moveElevatorTo(target: number, elevator: IElevator): Promise<void> {
+        const from: number = elevator.currentFloor;
+        if (target === from) return;
+
+        this._state = ElevatorState.Moving;
+
+        const floorsToPass: Generator<number> = getFloorsBetween(from, target);
+
+        for (const floor of floorsToPass) {
+            await this._animateElevatorToFloor(floor);
+            elevator.currentFloor = floor;
+
+            if (this._shouldStopForPickup(floor, elevator)) {
+                console.log(`[Pickup] Stopping at floor ${floor}`);
+                await this._handleIntermediateFloor(floor);
+            }
         }
 
-        this._elevatorState = ElevatorState.Idle;
+        this._state = ElevatorState.Idle;
+        console.log(`[Arrived] at floor ${target}`);
     }
 
-    private async _moveElevatorToFloor(target: number): Promise<void> {
-        const elevator: IElevator = this._building.elevator;
-        const duration: number = APP_SETTINGS.ELEVATOR_SPEED_PER_FLOOR_MS * Math.abs(elevator.currentFloor - target);
-        this._elevatorState = ElevatorState.Moving;
-        console.log(`[Move]  from ${elevator.currentFloor} to ${target}. Direction: ${this._direction}`);
-
-        await this._buildingView.elevatorView.animateElevatorToFloor(target, duration);
-
-        elevator.currentFloor = target;
-        this._elevatorState = ElevatorState.Idle;
-        console.log(`[Arrived] at floor ${target}.`);
+    private async _animateElevatorToFloor(floor: number): Promise<void> {
+        const duration: number = APP_SETTINGS.ELEVATOR_SPEED_PER_FLOOR_MS;
+        await this._buildingView.elevatorView.animateElevatorToFloor(floor, duration);
     }
 
-    private _findNextTargetInDirection(current: number, direction: Direction): number | null {
-        const targetFloors: number[] = this._building.elevator.elevatorPassengers
-            .map((passenger: IPassenger): number => passenger.targetFloor)
-            .filter((floor: number): boolean => direction === Direction.Up ? floor > current : floor < current);
 
-        if (targetFloors.length > 0) {
-            return direction === Direction.Up
-                ? Math.min(...targetFloors)
-                : Math.max(...targetFloors);
+    private _getNextFloorInDirection(current: number, direction: Direction): number | null {
+        const targets: number[] = this._building.elevator.elevatorPassengers
+            .map((p: IPassenger): number => p.targetFloor)
+            .filter((floor: number): boolean =>
+                direction === Direction.Up ? floor > current : floor < current
+            );
+
+        if (targets.length > 0) {
+            return direction === Direction.Up ? Math.min(...targets) : Math.max(...targets);
         }
 
         return this._building.findFloorWithWaitingPassengers(current, direction);
     }
 
-    private _findNextGlobalTargetFloor(current: number): number | null {
+    private _getFallbackTarget(current: number, elevator: IElevator): number | null {
+        return elevator.hasPassengers
+            ? this._getNextFloorInDirection(current, this._direction)
+            : this._findClosestWaitingFloor(current);
+    }
+
+    private _findClosestWaitingFloor(current: number): number | null {
+        let closest: number | null = null;
         let minDistance: number = Infinity;
-        let closestFloor: number | null = null;
 
-        this._building.floors.forEach((floor, i) => {
+        this._building.floors.forEach((floor: IFloor, index: number): void => {
+            if (!floor.hasWaitingPassengers) return;
 
-            if (!floor.hasWaitingPassengers) {
-                return;
-            }
-
-            const dist: number = Math.abs(current - i);
-            if (dist < minDistance) {
-                minDistance = dist;
-                closestFloor = i;
+            const distance: number = Math.abs(current - index);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = index;
             }
         });
 
-        return closestFloor;
+        return closest;
     }
 
-    private async _onPassengerAppeared(): Promise<void> {
-        if (this._elevatorState === ElevatorState.Idle) {
-            await this._scheduleNextMove();
+
+    private _shouldStopForPickup(floor: number, elevator: IElevator): boolean {
+        const hasFreeSpace: boolean = elevator.elevatorPassengers.length < APP_SETTINGS.ELEVATOR_CAPACITY;
+        const hasSameDirection: boolean = this._building.hasWaitingPassengersOnFloor(floor, this._direction);
+        return hasFreeSpace && hasSameDirection;
+    }
+
+    private _hasPendingPickupAt(floor: number): boolean {
+        return this._building.hasWaitingPassengersOnFloor(floor, this._direction);
+    }
+
+
+    private async _handlePassengerFlow(floor: number): Promise<void> {
+        const shouldUnload: boolean = this._building.elevator.hasPassengersFor(floor);
+        const shouldLoad: boolean = this._building.hasWaitingPassengersOnFloor(floor, this._direction);
+
+        if (shouldUnload) {
+            this._state = ElevatorState.Unloading;
+            this._passengerFlow.unloadPassengers();
+            await delay(APP_SETTINGS.LOADING_TIME);
         }
-    }
 
-    public stopPassengerSpawning(): void {
-        this._spawnerController.stopSpawning();
+        if (shouldLoad) {
+            this._state = ElevatorState.Loading;
+            this._passengerFlow.loadPassengers(floor, this._direction);
+            await delay(APP_SETTINGS.LOADING_TIME);
+        }
     }
 
 }

@@ -1,19 +1,19 @@
 import {Container, Graphics, Point, Text} from 'pixi.js';
-import {Passenger} from '../core/models/Passenger';
 import {APP_SETTINGS} from '../config/app-settings.config';
 import {Direction} from '../enums/direction.enum';
 import {PASSENGER_SETTINGS} from "../config/passenger.config";
 import {FLOOR_CONFIG} from '../config/floor.config';
 import {Easing} from '@tweenjs/tween.js';
 import {animateMove} from '../utils/animate.util';
+import {IPassenger} from "../interfaces/interfaces";
 
 export class PassengerView {
-    public passenger: Passenger;
+    public passenger: IPassenger;
     public passengerContainer: Container;
     private readonly _passengerGraphics: Graphics;
     private readonly _passengerLabel: Text;
 
-    constructor(passenger1: Passenger) {
+    constructor(passenger1: IPassenger) {
         this.passenger = passenger1;
         this.passengerContainer = new Container();
 

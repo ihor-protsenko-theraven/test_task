@@ -14,7 +14,7 @@ export class Floor implements IFloor {
         return this.waitingUp.length + this.waitingDown.length;
     }
 
-    get hasWaitingPassengers(): boolean {
+    public get hasWaitingPassengers(): boolean {
         return this.floorQueueLength > 0;
     }
 
@@ -27,8 +27,8 @@ export class Floor implements IFloor {
     }
 
     public removePassengerFromQueue(id: number, direction: Direction): void {
-        const passengers = direction === Direction.Up ? this.waitingUp : this.waitingDown;
-        const passengerIndex = passengers.findIndex(p => p.id === id);
+        const passengers: IPassenger[] = direction === Direction.Up ? this.waitingUp : this.waitingDown;
+        const passengerIndex: number = passengers.findIndex((passenger: IPassenger): boolean => passenger.id === id);
 
         if (passengerIndex !== -1) {
             passengers.splice(passengerIndex, 1);
@@ -36,6 +36,15 @@ export class Floor implements IFloor {
     }
 
     public waitingPassengersOnFloor(direction: Direction): IPassenger[] {
-        return direction === Direction.Up ? this.waitingUp : this.waitingDown;
+
+        if (!this.hasWaitingPassengers) {
+            return [];
+        }
+
+        if (direction === Direction.Down) {
+            return this.waitingDown;
+        }
+
+        return this.waitingUp;
     }
 }

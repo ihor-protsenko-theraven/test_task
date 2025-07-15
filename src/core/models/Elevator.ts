@@ -13,7 +13,7 @@ export class Elevator implements IElevator {
         this.direction = startDirection;
     }
 
-    public get hasSpace(): boolean {
+    public get hasFreeSpace(): boolean {
         return this._elevatorPassengers.length < this._capacity;
     }
 
@@ -26,7 +26,7 @@ export class Elevator implements IElevator {
     }
 
     public boardPassengerToElevator(passenger: IPassenger): boolean {
-        if (!this.hasSpace) {
+        if (!this.hasFreeSpace) {
             return false;
         }
         this._elevatorPassengers.push(passenger);
